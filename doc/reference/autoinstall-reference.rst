@@ -606,7 +606,7 @@ By default (except on s390x), the matching disk will be partitioned using a GUID
           name: direct
           ptable: msdos
 
-When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a password.
+When using the ``lvm`` or ``btrfs`` layout, LUKS encryption can be enabled by supplying a password.
 
 .. code-block:: yaml
 
@@ -614,6 +614,10 @@ When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a pas
       storage:
         layout:
           name: lvm
+          password: LUKS_PASSPHRASE
+      storage:
+        layout:
+          name: btrfs
           password: LUKS_PASSPHRASE
 
 The ``btrfs`` layout creates a btrfs filesystem with ``@`` and ``@home`` subvolumes, mounted at ``/`` and ``/home``.

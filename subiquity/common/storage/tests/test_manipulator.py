@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import pathlib
 import unittest
 from unittest import mock
 
@@ -23,7 +24,7 @@ from subiquity.common.storage import boot, gaps, sizes
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.storage.manipulator import StorageManipulator
 from subiquity.common.storage.spec import FileSystemSpec
-from subiquity.models.storage import FirmwareType, MiB, Partition
+from subiquity.models.storage import FirmwareType, MiB, Partition, RecoveryKeyHandler
 from subiquity.models.tests.test_storage import (
     make_disk,
     make_filesystem,
@@ -83,6 +84,32 @@ class TestStorageManipulator(unittest.TestCase):
         }
         vg = manipulator.create_volgroup(spec)
         manipulator.delete_volgroup(vg)
+        dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
+        self.assertEqual(dm_crypts, [])
+
+    def test_maybe_create_luks(self):
+        manipulator, disk = make_manipulator_and_disk()
+        device = manipulator.maybe_create_luks(disk, passphrase="passw0rd")
+        self.assertEqual(device.type, "dm_crypt")
+        self.assertEqual(device.key, "passw0rd")
+        self.assertEqual(device.volume, disk)
+        self.assertIsNone(device.recovery_key)
+
+    def test_maybe_create_luks_recovery_key(self):
+        manipulator, disk = make_manipulator_and_disk()
+        recovery_key = RecoveryKeyHandler(
+            live_location=pathlib.Path("/run/recovery-key.txt"),
+            backup_location=pathlib.Path("/var/log/installer/recovery-key.txt"),
+        )
+        device = manipulator.maybe_create_luks(
+            disk, passphrase="passw0rd", recovery_key=recovery_key
+        )
+        self.assertEqual(device.recovery_key, recovery_key)
+
+    def test_maybe_create_luks_no_passphrase(self):
+        manipulator, disk = make_manipulator_and_disk()
+        device = manipulator.maybe_create_luks(disk)
+        self.assertEqual(device, disk)
         dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
         self.assertEqual(dm_crypts, [])
 

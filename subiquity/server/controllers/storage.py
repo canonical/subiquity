@@ -55,7 +55,11 @@ from subiquity.common.storage.requirements import (
     Requirements,
     RequirementSeverity,
 )
-from subiquity.common.storage.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
+from subiquity.common.storage.spec import (
+    FileSystemSpec,
+    PartitionSpec,
+    VolGroupSpec,
+)
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
@@ -148,6 +152,12 @@ system_non_gpt_text = _(
 
 
 DRY_RUN_RESET_SIZE = 500 * MiB
+
+AUTOINSTALL_LAYOUT_CAPABILITIES = {
+    "lvm": (GuidedCapability.LVM, GuidedCapability.LVM_LUKS),
+    "zfs": (GuidedCapability.ZFS, GuidedCapability.ZFS_LUKS_KEYSTORE),
+    "btrfs": (GuidedCapability.BTRFS, GuidedCapability.BTRFS_LUKS),
+}
 
 
 class StorageRecoverableError(RecoverableError):
@@ -335,6 +345,7 @@ class VariationInfo:
                     GuidedCapability.ZFS,
                     GuidedCapability.ZFS_LUKS_KEYSTORE,
                     GuidedCapability.BTRFS,
+                    GuidedCapability.BTRFS_LUKS,
                 ]
             ),
         )
@@ -754,6 +765,22 @@ class StorageController(SubiquityController, StorageManipulator):
     def guided_dd(self, disk: ModelDisk):
         self.model.dd_target = disk
 
+    def _get_passphrase_and_recovery_key(
+        self,
+        choice: GuidedChoiceV2,
+        *,
+        recovery_key_default_suffix: str,
+    ) -> tuple[Optional[str], Optional[RecoveryKeyHandler]]:
+        """Return the passphrase and recovery key handler from choice."""
+        if choice.recovery_key and not choice.password:
+            raise StorageInvalidUsageError(
+                "Cannot have a recovery key without encryption"
+            )
+        recovery_key = RecoveryKeyHandler.from_post_data(
+            choice.recovery_key, default_suffix=recovery_key_default_suffix
+        )
+        return choice.password, recovery_key
+
     def guided_lvm(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
@@ -769,17 +796,13 @@ class StorageController(SubiquityController, StorageManipulator):
             i += 1
             vg_name = "ubuntu-vg-{}".format(i)
         spec = VolGroupSpec(name=vg_name, devices=set([part]))
-        if choice.password is not None:
-            spec["passphrase"] = choice.password
-        if choice.recovery_key and not choice.password:
-            raise StorageInvalidUsageError(
-                "Cannot have a recovery key without encryption"
-            )
-        recovery_key_handler = RecoveryKeyHandler.from_post_data(
-            choice.recovery_key, default_suffix=f"recovery-key-{vg_name}.txt"
+        passphrase, recovery_key = self._get_passphrase_and_recovery_key(
+            choice, recovery_key_default_suffix=f"recovery-key-{vg_name}.txt"
         )
-        if recovery_key_handler is not None:
-            spec["recovery-key"] = recovery_key_handler
+        if passphrase is not None:
+            spec["passphrase"] = passphrase
+        if recovery_key is not None:
+            spec["recovery-key"] = recovery_key
 
         vg = self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
@@ -871,23 +894,32 @@ class StorageController(SubiquityController, StorageManipulator):
             bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
             bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
-    def guided_btrfs(self, gap):
+    def guided_btrfs(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
         bootfs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
         self.create_partition(device, gap_boot, bootfs_spec)
-        rootdev = self.create_partition(
-            device, gap_rest, FileSystemSpec(fstype="btrfs")
+        rootdev = self.create_partition(device, gap_rest, FileSystemSpec(fstype=None))
+
+        passphrase, recovery_key = self._get_passphrase_and_recovery_key(
+            choice, recovery_key_default_suffix="recovery-key-btrfs.txt"
         )
-        rootfs = rootdev.fs()
+        rootdev = self.maybe_create_luks(
+            rootdev, passphrase=passphrase, recovery_key=recovery_key
+        )
+
+        rootfs = self.create_filesystem(rootdev, FileSystemSpec(fstype="btrfs"))
         self.create_mounted_subvolume(
             rootfs, "@home", FileSystemSpec(mount="/home", options="subvol=@home")
         )
         self.create_mounted_subvolume(
             rootfs, "@", FileSystemSpec(mount="/", options="subvol=@")
         )
+
+        self.model.load_or_generate_recovery_keys()
+        self.model.expose_recovery_keys()
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
@@ -1062,7 +1094,7 @@ class StorageController(SubiquityController, StorageManipulator):
         elif choice.capability.is_zfs():
             self.guided_zfs(gap, choice)
         elif choice.capability.is_btrfs():
-            self.guided_btrfs(gap)
+            self.guided_btrfs(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         elif choice.capability == GuidedCapability.DD:
@@ -2326,28 +2358,23 @@ class StorageController(SubiquityController, StorageManipulator):
                 sizing_policy = SizingPolicy.from_string(
                     layout.get("sizing-policy", None)
                 )
-                if password is not None:
-                    capability = GuidedCapability.LVM_LUKS
-                else:
-                    capability = GuidedCapability.LVM
-                if recovery_key and password is None:
-                    raise Exception(
-                        "recovery_key can only be used if password is specified"
-                    )
-                guided_recovery_key = RecoveryKey.from_autoinstall(recovery_key)
 
+            if name in AUTOINSTALL_LAYOUT_CAPABILITIES:
+                unencrypted, encrypted = AUTOINSTALL_LAYOUT_CAPABILITIES[name]
+                capability = encrypted if password is not None else unencrypted
             elif name == "dd":
                 capability = GuidedCapability.DD
                 assert mode == "reformat_disk"
-            elif name == "zfs":
-                if password is not None:
-                    capability = GuidedCapability.ZFS_LUKS_KEYSTORE
-                else:
-                    capability = GuidedCapability.ZFS
-            elif name == "btrfs":
-                capability = GuidedCapability.BTRFS
             else:
                 capability = GuidedCapability.DIRECT
+
+            if recovery_key and password is None:
+                raise Exception(
+                    "recovery_key can only be used if password is specified"
+                )
+
+            if capability.is_lvm() or capability.is_btrfs():
+                guided_recovery_key = RecoveryKey.from_autoinstall(recovery_key)
 
         if mode == "reformat_disk":
             match = layout.get("match", {"size": "largest"})
