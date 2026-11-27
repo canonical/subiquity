@@ -2264,7 +2264,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         guided_choice = self.controller.guided.call_args.args[0]
         self.assertEqual(capability, guided_choice.capability)
 
-    @parameterized.expand((("lvm",), ("btrfs",)))
+    @parameterized.expand((("lvm",), ("zfs",), ("btrfs",), ("direct",), ("dd",)))
     async def test_autoinstall_guided_recovery_key_without_password(self, name):
         await self._guided_setup(FirmwareType.UEFI, "gpt")
         with self.assertRaisesRegex(Exception, "recovery_key can only be used"):

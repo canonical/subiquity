@@ -22,7 +22,6 @@ from subiquity.common.storage import boot, gaps
 from subiquity.common.storage.spec import (
     FileSystemSpec,
     LogicalVolumeSpec,
-    LuksSpec,
     PartitionSpec,
     RaidSpec,
     VolGroupSpec,
@@ -35,6 +34,7 @@ from subiquity.models.storage import (
     LVM_VolGroup,
     Partition,
     Raid,
+    RecoveryKeyHandler,
     ZPool,
     align_up,
 )
@@ -174,14 +174,22 @@ class StorageManipulator:
             d.wipe = "superblock"
         self.model.remove_raid(raid)
 
-    def maybe_create_luks(self, device, spec: LuksSpec):
-        """Create a LUKS device, or return the original device if unencrypted."""
-        key = spec.get("passphrase")
-        if key:
+    def maybe_create_luks(
+        self,
+        device,
+        *,
+        passphrase: Optional[str] = None,
+        recovery_key: Optional[RecoveryKeyHandler] = None,
+    ):
+        """Create a LUKS device if a passphrase is supplied.
+
+        Otherwise, return the device unchanged.
+        """
+        if passphrase:
             device = self.model.add_dm_crypt(
                 device,
-                key=key,
-                recovery_key=spec.get("recovery-key"),
+                key=passphrase,
+                recovery_key=recovery_key,
             )
         return device
 
@@ -189,7 +197,11 @@ class StorageManipulator:
         devices = set()
         for device in spec["devices"]:
             self.clear(device)
-            device = self.maybe_create_luks(device, spec)
+            device = self.maybe_create_luks(
+                device,
+                passphrase=spec.get("passphrase"),
+                recovery_key=spec.get("recovery-key"),
+            )
             devices.add(device)
         return self.model.add_volgroup(name=spec["name"], devices=devices)
 
@@ -431,7 +443,11 @@ class StorageManipulator:
             devices = set()
             for d in spec["devices"]:
                 self.clear(d)
-                d = self.maybe_create_luks(d, spec)
+                d = self.maybe_create_luks(
+                    d,
+                    passphrase=spec.get("passphrase"),
+                    recovery_key=spec.get("recovery-key"),
+                )
                 d._constructed_device = existing
                 devices.add(d)
             existing.name = spec["name"]
